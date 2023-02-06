@@ -33,7 +33,7 @@ class Entity
             ':table_name' => $this->tableName
         ]);
         while ($row = $toQuery->fetch(PDO::FETCH_ASSOC)) {
-            yield $row['billing_address_id'];
+            yield $row['COLUMN_NAME'];
         }
     }
 }
