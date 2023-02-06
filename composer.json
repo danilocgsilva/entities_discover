@@ -1,0 +1,17 @@
+{
+    "name": "danilocgsilva/entities_discover",
+    "description": "Discovers entities relations in a relational database",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Danilocgsilva\\EntitiesDiscover\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Danilo Carlos",
+            "email": "contato@danilocgsilva.me"
+        }
+    ],
+    "require": {}
+}
