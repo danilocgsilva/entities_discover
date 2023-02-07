@@ -54,7 +54,11 @@ class Entity
         ]);
         while ($row = $toQuery->fetch(PDO::FETCH_ASSOC)) {
             $this->foreignsFound++;
-            yield $row['COLUMN_NAME'];
+            yield new ForeignRelation(
+                $row['COLUMN_NAME'], 
+                $row['REFERENCED_TABLE_NAME'], 
+                (int) $row['REFERENCED_COLUMN_NAME']
+            );
         }
     }
 }
