@@ -3,19 +3,21 @@
 namespace Danilocgsilva\EntitiesDiscover\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Danilocgsilva\EntitiesDiscover\Entity;
+use Danilocgsilva\EntitiesDiscover\{Entity, ErrorLogInterface};
 use PDO;
+use Exception;
 
 class EntityTest extends TestCase
 {
-    public function testGetForeigns(): void
+    public function testGetForeignsException(): void
     {
-        $entity = new Entity();
-        $entity->setTable("tableTest");
+        $this->expectException(Exception::class);
+        $entity = new Entity($this->createMock(ErrorLogInterface::class));
         $entity->setPdo(
             new PDO('sqlite:messaging.sqlite3')
         );
 
-        $this->assertSame(1, 1);
+        $generator = $entity->getForeigns();
+        $generator->next();
     }
 }
