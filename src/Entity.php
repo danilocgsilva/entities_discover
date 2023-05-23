@@ -57,7 +57,7 @@ class Entity
             yield new ForeignRelation(
                 $row['COLUMN_NAME'], 
                 $row['REFERENCED_TABLE_NAME'], 
-                (int) $row['REFERENCED_COLUMN_NAME']
+                $row['REFERENCED_COLUMN_NAME']
             );
         }
     }
