@@ -1,5 +1,7 @@
 <?php
 
+namespace Danilocgsilva\EntitiesDiscover;
+
 use Danilocgsilva\EntitiesDiscover\ErrorLogInterface;
 
 class ErrorLog implements ErrorLogInterface
