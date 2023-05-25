@@ -7,7 +7,7 @@ class ForeignRelation
     public function __construct(
         private string $localField,
         private string $foreighTable,
-        private int $foreignId
+        private string $foreignId
     ) {}
 
     public function getLocalField(): string
@@ -20,7 +20,7 @@ class ForeignRelation
         return $this->foreighTable;
     }
 
-    public function getForeignIf(): int
+    public function getForeignIf(): string
     {
         return $this->foreignId;
     }
