@@ -6,6 +6,7 @@ use PDO;
 use Generator;
 use ReflectionProperty;
 use Exception;
+use Danilocgsilva\Database\Discover;
 
 class Entity
 {
@@ -60,5 +61,11 @@ class Entity
                 $row['REFERENCED_COLUMN_NAME']
             );
         }
+    }
+
+    public function discoverTablesOccurrencesByFieldName(string $tableName)
+    {
+        $databaseDiscover = new Discover($this->pdo);
+        $databaseDiscover->tablesWithEqualFieldName();
     }
 }
