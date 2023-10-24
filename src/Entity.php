@@ -7,6 +7,7 @@ use Generator;
 use ReflectionProperty;
 use Exception;
 use Danilocgsilva\Database\Discover;
+use Danilocgsilva\Database\Table;
 
 class Entity
 {
@@ -63,9 +64,42 @@ class Entity
         }
     }
 
-    public function discoverTablesOccurrencesByFieldName(string $tableName)
+    public function discoverTablesOccurrencesByFieldName(string $tableName, string|int $relatedEntityIdentity): array
+    {
+        $queryField = (new Table())
+            ->setName($tableName)
+            ->fetchFirstField($this->pdo)
+            ->getFirstField();
+
+        $tables = $this->getTablesWithField($queryField);
+
+        $occurrences = [];
+        foreach ($tables as $tableLoop) {
+
+            $tableLoop->fetchFirstField($this->pdo);
+            if ($tableLoop->getFirstField() === $queryField) {
+                continue;
+            }
+            
+            $queryCount = sprintf(
+                "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;", 
+                $tableLoop->getFirstField(),
+                $tableLoop->getName(),
+                $queryField
+            );
+            $preResult = $this->pdo->prepare($queryCount);
+            $preResult->execute([':search' => $relatedEntityIdentity]);
+            $row = $preResult->fetch(PDO::FETCH_ASSOC);
+            $occurrences[$tableLoop->getName()] = $row['occurrences'];
+        }
+        return $occurrences;
+    }
+
+    private function getTablesWithField(string $field)
     {
         $databaseDiscover = new Discover($this->pdo);
-        $databaseDiscover->tablesWithEqualFieldName();
+        $generator = $databaseDiscover->tablesWithEqualFieldName($field);
+        $tables = iterator_to_array($generator);
+        return $tables;
     }
 }
