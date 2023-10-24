@@ -77,13 +77,13 @@ class Entity
         foreach ($tables as $tableLoop) {
 
             $tableLoop->fetchFirstField($this->pdo);
-            if ($tableLoop->getFirstField() === $queryField) {
+            if ($tableLoop->firstField === $queryField) {
                 continue;
             }
             
             $queryCount = sprintf(
                 "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;", 
-                $tableLoop->getFirstField(),
+                $tableLoop->firstField,
                 $tableLoop->getName(),
                 $queryField
             );
