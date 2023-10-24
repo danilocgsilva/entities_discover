@@ -64,12 +64,12 @@ class Entity
         }
     }
 
-    public function discoverTablesOccurrencesByFieldName(string $tableName, string|int $relatedEntityIdentity): array
+    public function discoverEntitiesOccurrencesByIdentity(string $tableName, string|int $relatedEntityIdentity): array
     {
         $queryField = (new Table())
             ->setName($tableName)
             ->fetchFirstField($this->pdo)
-            ->getFirstField();
+            ->firstField;
 
         $tables = $this->getTablesWithField($queryField);
 
