@@ -71,12 +71,14 @@ class Entity
             ->fetchFirstField($this->pdo)
             ->firstField;
 
-        $tables = $this->getTablesWithField($queryField);
+        $tables = [];
+        while ($table = $this->getTablesWithField($queryField)) {
+            $table->fetchFirstField($this->pdo);
+            $tables[] = $table;
+        }
 
         $occurrences = [];
         foreach ($tables as $tableLoop) {
-
-            $tableLoop->fetchFirstField($this->pdo);
             if ($tableLoop->firstField === $queryField) {
                 continue;
             }
@@ -98,8 +100,6 @@ class Entity
     private function getTablesWithField(string $field)
     {
         $databaseDiscover = new Discover($this->pdo);
-        $generator = $databaseDiscover->tablesWithEqualFieldName($field);
-        $tables = iterator_to_array($generator);
-        return $tables;
+        return $databaseDiscover->tablesWithEqualFieldName($field);
     }
 }
