@@ -72,7 +72,7 @@ class Entity
             ->firstField;
 
         $tables = [];
-        while ($table = $this->getTablesWithField($queryField)) {
+        foreach ($this->getTablesWithField($queryField) as $table) {
             $table->fetchFirstField($this->pdo);
             $tables[] = $table;
         }
