@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types= 1);
+
 namespace Danilocgsilva\EntitiesDiscover;
 
 use PDO;
@@ -15,6 +17,7 @@ class Entity
     private PDO $pdo;
     private ErrorLogInterface $errorLog;
     private int $foreignsFound = 0;
+    private TimeDebug|null $timeDebug = null;
 
     public function __construct(ErrorLogInterface $errorLog)
     {
@@ -24,6 +27,12 @@ class Entity
     public function setTable(string $table): self
     {
         $this->tableName = $table;
+        return $this;
+    }
+
+    public function setTimeDebug(TimeDebug $timeDebug): self
+    {
+        $this->timeDebug = $timeDebug;
         return $this;
     }
 
@@ -79,7 +88,7 @@ class Entity
 
         $occurrences = [];
         foreach ($tables as $tableLoop) {
-            if ($tableLoop->firstField === $queryField) {
+            if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
                 continue;
             }
             
@@ -101,5 +110,10 @@ class Entity
     {
         $databaseDiscover = new Discover($this->pdo);
         return $databaseDiscover->tablesWithEqualFieldName($field);
+    }
+
+    private function isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField): bool
+    {
+        return $tableLoop->firstField === $queryField;
     }
 }
