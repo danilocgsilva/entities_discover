@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types= 1);
+
 namespace Danilocgsilva\EntitiesDiscover;
 
 use Danilocgsilva\EntitiesDiscover\ErrorLogInterface;

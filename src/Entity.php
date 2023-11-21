@@ -1,11 +1,15 @@
 <?php
 
+declare(strict_types= 1);
+
 namespace Danilocgsilva\EntitiesDiscover;
 
 use PDO;
 use Generator;
 use ReflectionProperty;
 use Exception;
+use Danilocgsilva\Database\Discover;
+use Danilocgsilva\Database\Table;
 
 class Entity
 {
@@ -13,6 +17,7 @@ class Entity
     private PDO $pdo;
     private ErrorLogInterface $errorLog;
     private int $foreignsFound = 0;
+    private TimeDebug|null $timeDebug = null;
 
     public function __construct(ErrorLogInterface $errorLog)
     {
@@ -22,6 +27,12 @@ class Entity
     public function setTable(string $table): self
     {
         $this->tableName = $table;
+        return $this;
+    }
+
+    public function setTimeDebug(TimeDebug $timeDebug): self
+    {
+        $this->timeDebug = $timeDebug;
         return $this;
     }
 
@@ -60,5 +71,49 @@ class Entity
                 $row['REFERENCED_COLUMN_NAME']
             );
         }
+    }
+
+    public function discoverEntitiesOccurrencesByIdentity(string $tableName, string|int $relatedEntityIdentity): array
+    {
+        $queryField = (new Table())
+            ->setName($tableName)
+            ->fetchFirstField($this->pdo)
+            ->firstField;
+
+        $tables = [];
+        foreach ($this->getTablesWithField($queryField) as $table) {
+            $table->fetchFirstField($this->pdo);
+            $tables[] = $table;
+        }
+
+        $occurrences = [];
+        foreach ($tables as $tableLoop) {
+            if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
+                continue;
+            }
+            
+            $queryCount = sprintf(
+                "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;", 
+                $tableLoop->firstField,
+                $tableLoop->getName(),
+                $queryField
+            );
+            $preResult = $this->pdo->prepare($queryCount);
+            $preResult->execute([':search' => $relatedEntityIdentity]);
+            $row = $preResult->fetch(PDO::FETCH_ASSOC);
+            $occurrences[$tableLoop->getName()] = $row['occurrences'];
+        }
+        return $occurrences;
+    }
+
+    private function getTablesWithField(string $field)
+    {
+        $databaseDiscover = new Discover($this->pdo);
+        return $databaseDiscover->tablesWithEqualFieldName($field);
+    }
+
+    private function isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField): bool
+    {
+        return $tableLoop->firstField === $queryField;
     }
 }
