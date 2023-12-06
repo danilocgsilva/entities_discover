@@ -75,6 +75,10 @@ class Entity
 
     public function discoverEntitiesOccurrencesByIdentity(string $tableName, string|int $relatedEntityIdentity): array
     {
+        if ($this->timeDebug) {
+            $this->timeDebug->message('Staring fetches occurrences from table ' . $tableName);
+        }
+        
         $queryField = (new Table())
             ->setName($tableName)
             ->fetchFirstField($this->pdo)
@@ -84,6 +88,10 @@ class Entity
         foreach ($this->getTablesWithField($queryField) as $table) {
             $table->fetchFirstField($this->pdo);
             $tables[] = $table;
+
+            if ($this->timeDebug) {
+                $this->timeDebug->message("Fetched occurrence in table " . $table . " for table " . $tableName);
+            }
         }
 
         $occurrences = [];
