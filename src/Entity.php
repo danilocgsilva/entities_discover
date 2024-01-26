@@ -73,6 +73,13 @@ class Entity
         }
     }
 
+    /**
+     * Returns an associative array, givin the table name as a key and an integer as the occurrences count.
+     *
+     * @param string $tableName
+     * @param string|integer $relatedEntityIdentity
+     * @return array
+     */
     public function discoverEntitiesOccurrencesByIdentity(string $tableName, string|int $relatedEntityIdentity): array
     {
         if ($this->timeDebug) {
