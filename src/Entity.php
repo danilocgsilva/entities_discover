@@ -91,6 +91,7 @@ class Entity
             ->fetchFirstField($this->pdo)
             ->firstField;
 
+        /** @var \Danilocgsilva\Database\Table[] $tables */
         $tables = [];
         foreach ($this->getTablesWithField($queryField) as $table) {
             $table->fetchFirstField($this->pdo);
@@ -101,6 +102,7 @@ class Entity
             }
         }
 
+        /** @var array $occurrences */
         $occurrences = [];
         foreach ($tables as $tableLoop) {
             if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
@@ -121,7 +123,11 @@ class Entity
         return $occurrences;
     }
 
-    private function getTablesWithField(string $field)
+    /**
+     * @param string $field
+     * @return Generator|\Danilocgsilva\Database\Table[]
+     */
+    private function getTablesWithField(string $field): Generator
     {
         $databaseDiscover = new Discover($this->pdo);
         return $databaseDiscover->tablesWithEqualFieldName($field);
