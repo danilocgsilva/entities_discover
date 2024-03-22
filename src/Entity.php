@@ -112,16 +112,6 @@ class Entity
                 continue;
             }
 
-            // $queryCount = sprintf(
-            //     "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;", 
-            //     $tableLoop->firstField,
-            //     $tableLoop->getName(),
-            //     $queryField
-            // );
-            // $preResult = $this->pdo->prepare($queryCount);
-            // $preResult->execute([':search' => $relatedEntityIdentity]);
-            // $row = $preResult->fetch(PDO::FETCH_ASSOC);
-            // $occurrences[$tableLoop->getName()] = $row['occurrences'];
             $pool[] = async(function () use ($tableLoop, $queryField, $relatedEntityIdentity, $occurrences) {
                 $queryCount = sprintf(
                     "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
@@ -132,7 +122,9 @@ class Entity
                 $preResult = $this->pdo->prepare($queryCount);
                 $preResult->execute([':search' => $relatedEntityIdentity]);
                 $row = $preResult->fetch(PDO::FETCH_ASSOC);
-                $occurrences[$tableLoop->getName()] = $row['occurrences'];
+                return [$row, $tableLoop->getName()];
+            })->then(function($resultAsync) use (&$occurrences) {
+                $occurrences[$resultAsync[1]] = $resultAsync[0]['occurrences'];
             });
         }
 
