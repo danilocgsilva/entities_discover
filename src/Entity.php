@@ -201,7 +201,7 @@ class Entity
                     $this->timeDebug->message("Success on " . $tableName . ": counted: " . (int) $row["occurrences"]);
                 }
             } catch (Exception $e) {
-                $countResults->addFail($tableLoop->getName(), $e->getMessage());
+                $countResults->addFail($tableLoop->getName(), $e->getMessage(), get_class($e));
                 if ($this->timeDebug) {
                     $this->timeDebug->message("Fail counting occurrences in " . $tableName. ", exeception message: " . $e->getMessage() . ".");
                 }
