@@ -24,6 +24,8 @@ class Entity
 
     private PdoReceipt|null $pdoReceipt;
 
+    private bool $rebuildPdo = false;
+
     private bool $retry = false;
 
     public function __construct(ErrorLogInterface $errorLog)
@@ -188,9 +190,8 @@ class Entity
                 continue;
             }
 
+            $fillResults = new FillResults($tableLoop, $queryField, $relatedEntityIdentity, $countResults, $this->pdo);
             try {
-
-                $fillResults = new FillResults($tableLoop, $queryField, $relatedEntityIdentity, $countResults, $this->pdo);
                 if ($this->retry) {
                     $fillResults->setRetry();
                 }
@@ -208,6 +209,12 @@ class Entity
                 );
                 if ($this->timeDebug) {
                     $this->timeDebug->message("Fail counting occurrences in " . $tableName. ", exeception message: " . $exceptionMessage . ", class: " . $exceptionClass . ".");
+                }
+                if ($this->rebuildPdo) {
+                    if ($this->timeDebug) {
+                        $this->timeDebug->message("PDO will be rebuilted.");
+                    }
+                    $this->pdo = $this->getNewPdo();
                 }
             } catch (Exception $e) {
                 if ($this->timeDebug) {
@@ -233,5 +240,14 @@ class Entity
     private function isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField): bool
     {
         return $tableLoop->firstField === $queryField;
+    }
+
+    private function getNewPdo(): PDO
+    {
+        return new PDO(
+            sprintf("mysql:host=%s;dbname=%s", $this->pdoReceipt->host, $this->pdoReceipt->database), 
+            $this->pdoReceipt->user, 
+            $this->pdoReceipt->password
+        );
     }
 }
