@@ -20,11 +20,5 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^9.5"
-    },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "git@github.com:danilocgsilva/database_discover.git"
-        }
-    ]
+    }
 }
