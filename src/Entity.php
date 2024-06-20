@@ -11,14 +11,20 @@ use Exception;
 use Danilocgsilva\Database\Discover;
 use Danilocgsilva\Database\Table;
 use Spatie\Async\Pool;
+use Amp\Mysql\MysqlConfig;
+use Amp\Mysql\MysqlConnectionPool;
+use function Amp\async;
+use Amp\Future;
 
 class Entity
 {
     private string $tableName;
-    private PDO $pdo;
+    private PDO|null $pdo;
     private ErrorLogInterface $errorLog;
     private int $foreignsFound = 0;
     private TimeDebug|null $timeDebug = null;
+
+    private PdoReceipt|null $pdoReceipt;
 
     public function __construct(ErrorLogInterface $errorLog)
     {
@@ -40,6 +46,12 @@ class Entity
     public function setPdo(PDO $pdo): self
     {
         $this->pdo = $pdo;
+        return $this;
+    }
+
+    public function setPdoReceipt(PdoReceipt $pdoReceipt): self
+    {
+        $this->pdoReceipt = $pdoReceipt;
         return $this;
     }
 
@@ -81,7 +93,7 @@ class Entity
      * @param string|integer $relatedEntityIdentity
      * @return array
      */
-    public function discoverEntitiesOccurrencesByIdentity(string $tableName, string|int $relatedEntityIdentity): array
+    public function discoverEntitiesOccurrencesByIdentityAsync(string $tableName, string|int $relatedEntityIdentity): array
     {
         if ($this->timeDebug) {
             $this->timeDebug->message('Staring fetches occurrences from table ' . $tableName);
@@ -103,7 +115,80 @@ class Entity
             }
         }
 
-        $pool = Pool::create();
+        /** @var array $occurrences */
+        $occurrences = [];
+        $future = [];
+
+        foreach ($tables as $tableLoop) {
+            if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
+                continue;
+            }
+
+            if ($tableLoop->getName() === "atm_averbacoes_encomendas_status") {
+                continue;
+            }
+
+
+            if ($tableLoop->getName() === "averbacoes_encomendas_descartadas") {
+                continue;
+            }
+
+            $future[] = async(function () use ($tableLoop, $queryField, $relatedEntityIdentity, &$occurrences) {
+                try {
+                    $queryCount = sprintf(
+                        "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
+                        $tableLoop->firstField,
+                        $tableLoop->getName(),
+                        $queryField,
+                        $relatedEntityIdentity
+                    );
+
+                    $preResult = $this->pdo->prepare($queryCount);
+                    $preResult->execute([':search' => $relatedEntityIdentity]);
+                    $row = $preResult->fetch(PDO::FETCH_ASSOC);
+                    $occurrences[$tableLoop->getName()] = $row["occurrences"];
+                } catch (Exception $e) {
+                    $occurrences[$tableLoop->getName()] = "0";
+                }
+            });
+        }
+
+        Future\await($future);
+
+        return $occurrences;
+    }
+
+
+    /**
+     * Returns an associative array, givin the table name as a key and an integer as the occurrences count.
+     *
+     * @param string $tableName
+     * @param string|integer $relatedEntityIdentity
+     * @return array
+     */
+    public function discoverEntitiesOccurrencesByIdentitySync(string $tableName, string|int $relatedEntityIdentity): array
+    {
+        if ($this->timeDebug) {
+            $this->timeDebug->message('Staring fetches occurrences from table ' . $tableName);
+        }
+
+        $queryField = (new Table())
+            ->setName($tableName)
+            ->fetchFirstField($this->pdo)
+            ->firstField;
+
+        /** @var \Danilocgsilva\Database\Table[] $tables */
+        $tables = [];
+        foreach ($this->getTablesWithField($queryField) as $table) {
+            $table->fetchFirstField($this->pdo);
+            $tables[] = $table;
+
+            if ($this->timeDebug) {
+                $this->timeDebug->message("Fetched occurrence in table " . $table . " for table " . $tableName);
+            }
+        }
+
+        var_dump($tables);
 
         /** @var array $occurrences */
         $occurrences = [];
@@ -112,23 +197,34 @@ class Entity
                 continue;
             }
 
-            $pool[] = async(function () use ($tableLoop, $queryField, $relatedEntityIdentity, $occurrences) {
+            if ($tableLoop->getName() === "atm_averbacoes_encomendas_status") {
+                continue;
+            }
+
+
+            if ($tableLoop->getName() === "averbacoes_encomendas_descartadas") {
+                continue;
+            }
+
+            try {
                 $queryCount = sprintf(
                     "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
                     $tableLoop->firstField,
                     $tableLoop->getName(),
-                    $queryField
+                    $queryField,
+                    $relatedEntityIdentity
                 );
+
                 $preResult = $this->pdo->prepare($queryCount);
                 $preResult->execute([':search' => $relatedEntityIdentity]);
                 $row = $preResult->fetch(PDO::FETCH_ASSOC);
-                return [$row, $tableLoop->getName()];
-            })->then(function($resultAsync) use (&$occurrences) {
-                $occurrences[$resultAsync[1]] = $resultAsync[0]['occurrences'];
-            });
+                $occurrences[$tableLoop->getName()] = $row["occurrences"];
+                print($tableLoop->getName() . " - " . $row["occurrences"] . "\n");
+            } catch (Exception $e) {
+                print("Deu ruim para " . $tableLoop->getName() . "\n");
+                $occurrences[$tableLoop->getName()] = "0";
+            }
         }
-
-        await($pool);
 
         return $occurrences;
     }
