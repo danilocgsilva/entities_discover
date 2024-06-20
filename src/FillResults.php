@@ -40,6 +40,9 @@ class FillResults
 
     private function addOnSuccess(): void
     {
+        if ($this->timeDebug) {
+            $this->timeDebug->message("Will try fetch counting in table " . $this->tableLoop->getName() . ".");
+        }
         $queryCount = sprintf(
             "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
             $this->tableLoop->firstField,
