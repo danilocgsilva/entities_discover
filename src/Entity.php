@@ -198,7 +198,7 @@ class Entity
                     $fillResults->setTimeDebug($this->timeDebug);
                 }
 
-                $fillResults->fill();
+                $fillResults->addCount();
                 
             } catch (PDOException $pdoe) {
                 $countResults->addFail(
