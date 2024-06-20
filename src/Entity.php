@@ -258,7 +258,7 @@ class Entity
                 break;
             } catch (Exception $e) {
                 if ($this->timeDebug) {
-                    $this->timeDebug->message("Fail in trial " . $currentTrial);
+                    $this->timeDebug->message("Fail in trial " . $currentTrial . ". Message: " . $e->getMessage() . ". Exception class: " . get_class($e));
                 }
                 if ($currentTrial === 3) {
                     throw $e;
