@@ -67,6 +67,12 @@ class Entity
         return $this;
     }
 
+    public function setRebuildPdo(): self
+    {
+        $this->rebuildPdo = true;
+        return $this;
+    }
+
     public function getForeigns(): Generator
     {
         if (!(new ReflectionProperty($this, 'tableName'))->isInitialized($this)) {
@@ -199,7 +205,7 @@ class Entity
                     $fillResults->setTimeDebug($this->timeDebug);
                 }
 
-                $fillResults->addCount();
+                $fillResults->add();
                 
             } catch (PDOException $pdoe) {
                 $countResults->addFail(

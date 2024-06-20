@@ -29,7 +29,7 @@ class FillResults
         return $this;
     }
 
-    public function addCount(): void
+    public function add(): void
     {
         if ($this->retry) {
             $this->addOnSuccessWithTrials();
