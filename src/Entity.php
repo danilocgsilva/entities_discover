@@ -190,15 +190,15 @@ class Entity
 
             try {
 
-                $occurrentesCounter = new OccurrencesCounter($tableLoop, $queryField, $relatedEntityIdentity, $countResults, $this->pdo);
+                $fillResults = new FillResults($tableLoop, $queryField, $relatedEntityIdentity, $countResults, $this->pdo);
                 if ($this->timeDebug) {
-                    $occurrentesCounter->setTimeDebug($this->timeDebug);
+                    $fillResults->setTimeDebug($this->timeDebug);
                 }
                 
                 if ($this->retry) {
-                    $occurrentesCounter->addOnSuccessWithTrials();
+                    $fillResults->addOnSuccessWithTrials();
                 } else {
-                    $occurrentesCounter->addOnSuccess();
+                    $fillResults->addOnSuccess();
                 }
             } catch (PDOException $pdoe) {
                 $countResults->addFail(

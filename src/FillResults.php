@@ -7,11 +7,11 @@ namespace Danilocgsilva\EntitiesDiscover;
 use Exception;
 use PDO;
 
-class OccurrencesCounter
+class FillResults
 {
     private TimeDebug|null $timeDebug = null;
 
-    public function __construct(private $tableLoop, private $queryField, private $relatedEntityIdentity, private $countResults, private PDO $pdo) {}
+    public function __construct(private $tableLoop, private $queryField, private $relatedEntityIdentity, private CountResults $countResults, private PDO $pdo) {}
 
     public function setTimeDebug(TimeDebug $timeDebug): self
     {
