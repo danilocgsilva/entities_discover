@@ -10,7 +10,7 @@ class CountResults
 
     private $fails = [];
     
-    public function addSucess(string $tableName, int $count): void
+    public function addSuccess(string $tableName, int $count): void
     {
         $this->successes[$tableName] = $count;
     }

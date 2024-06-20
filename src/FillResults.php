@@ -54,7 +54,7 @@ class FillResults
         $preResult = $this->pdo->prepare($queryCount);
         $preResult->execute([':search' => $this->relatedEntityIdentity]);
         $row = $preResult->fetch(PDO::FETCH_ASSOC);
-        $this->countResults->addSucess(($tableName = $this->tableLoop->getName()), (int) $row["occurrences"]);
+        $this->countResults->addSuccess(($tableName = $this->tableLoop->getName()), (int) $row["occurrences"]);
         if ($this->timeDebug) {
             $this->timeDebug->message("Success on " . $tableName . ": counted: " . (int) $row["occurrences"]);
         }
