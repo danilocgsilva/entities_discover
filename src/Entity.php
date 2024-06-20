@@ -231,6 +231,7 @@ class Entity
                             $this->timeDebug->message("Awaiting " . $this->awaitInSecondsBeforePdoRebuild . " seconds before rebuild...");
                         }
                     }
+                    sleep($this->awaitInSecondsBeforePdoRebuild);
                     $this->pdo = $this->getNewPdo();
                 }
             } catch (Exception $e) {
