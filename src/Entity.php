@@ -24,6 +24,8 @@ class Entity
 
     private PdoReceipt|null $pdoReceipt;
 
+    private bool $retry = false;
+
     public function __construct(ErrorLogInterface $errorLog)
     {
         $this->errorLog = $errorLog;
@@ -56,6 +58,11 @@ class Entity
     public function getForeignsFound(): int
     {
         return $this->foreignsFound;
+    }
+
+    public function setRetry(): self{
+        $this->retry = true;
+        return $this;
     }
 
     public function getForeigns(): Generator
@@ -147,7 +154,6 @@ class Entity
         return $occurrences;
     }
 
-
     /**
      * Returns an associative array, givin the table name as a key and an integer as the occurrences count.
      *
@@ -183,11 +189,10 @@ class Entity
             }
 
             try {
-                $row = $this->countOccurrences($tableLoop, $queryField, $relatedEntityIdentity);
-                
-                $countResults->addSucess(($tableName = $tableLoop->getName()), (int) $row["occurrences"]);
-                if ($this->timeDebug) {
-                    $this->timeDebug->message("Success on " . $tableName . ": counted: " . (int) $row["occurrences"]);
+                if ($this->retry) {
+                    $this->addOnSuccessWithTrials($tableLoop, $queryField, $relatedEntityIdentity, $countResults);
+                } else {
+                    $this->addOnSuccess($tableLoop, $queryField, $relatedEntityIdentity, $countResults);
                 }
             } catch (PDOException $pdoe) {
                 $countResults->addFail(
@@ -224,7 +229,7 @@ class Entity
         return $tableLoop->firstField === $queryField;
     }
 
-    private function countOccurrences($tableLoop, $queryField, $relatedEntityIdentity)
+    private function addOnSuccess($tableLoop, $queryField, $relatedEntityIdentity, $countResults): void
     {
         $queryCount = sprintf(
             "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
@@ -236,6 +241,30 @@ class Entity
 
         $preResult = $this->pdo->prepare($queryCount);
         $preResult->execute([':search' => $relatedEntityIdentity]);
-        return $preResult->fetch(PDO::FETCH_ASSOC);
+        $row = $preResult->fetch(PDO::FETCH_ASSOC);
+        $countResults->addSucess(($tableName = $tableLoop->getName()), (int) $row["occurrences"]);
+        if ($this->timeDebug) {
+            $this->timeDebug->message("Success on " . $tableName . ": counted: " . (int) $row["occurrences"]);
+        }
+    }
+
+    private function addOnSuccessWithTrials($tableLoop, $queryField, $relatedEntityIdentity, $countResults): void
+    {
+        $maximumTrials = 3;
+        $currentTrial = 1;
+        while ($currentTrial <= $maximumTrials) {
+            try {
+                $this->addOnSuccess($tableLoop, $queryField, $relatedEntityIdentity, $countResults);
+                break;
+            } catch (Exception $e) {
+                if ($this->timeDebug) {
+                    $this->timeDebug->message("Fail in trial " . $currentTrial);
+                }
+                if ($currentTrial === 3) {
+                    throw $e;
+                }
+                $currentTrial++;
+            }
+        }
     }
 }
