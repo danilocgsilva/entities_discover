@@ -260,7 +260,7 @@ class Entity
                 if ($this->timeDebug) {
                     $this->timeDebug->message("Fail in trial " . $currentTrial . ". Message: " . $e->getMessage() . ". Exception class: " . get_class($e));
                 }
-                if ($currentTrial === 3) {
+                if ($currentTrial === $maximumTrials) {
                     throw $e;
                 }
                 $currentTrial++;
