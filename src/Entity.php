@@ -30,9 +30,17 @@ class Entity
 
     private int $awaitInSecondsBeforePdoRebuild = 0;
 
+    private array $skipTables = [];
+
     public function __construct(ErrorLogInterface $errorLog)
     {
         $this->errorLog = $errorLog;
+    }
+
+    public function setSkipTables(array $skipingTables): self
+    {
+        $this->skipTables = $skipingTables;
+        return $this;
     }
 
     public function setTable(string $table): self
@@ -142,6 +150,9 @@ class Entity
 
         foreach ($tables as $tableLoop) {
             if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
+                continue;
+            }
+            if (in_array($tableLoop->getName(), $this->skipTables)) {
                 continue;
             }
 
