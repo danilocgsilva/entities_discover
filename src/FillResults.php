@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types= 1);
+declare(strict_types=1);
 
 namespace Danilocgsilva\EntitiesDiscover;
 
@@ -11,7 +11,11 @@ class FillResults
 {
     private TimeDebug|null $timeDebug = null;
 
-    public function __construct(private $tableLoop, private $queryField, private $relatedEntityIdentity, private CountResults $countResults, private PDO $pdo) {}
+    private bool $retry = false;
+
+    public function __construct(private $tableLoop, private $queryField, private $relatedEntityIdentity, private CountResults $countResults, private PDO $pdo)
+    {
+    }
 
     public function setTimeDebug(TimeDebug $timeDebug): self
     {
@@ -19,7 +23,22 @@ class FillResults
         return $this;
     }
 
-    public function addOnSuccess(): void
+    public function setRetry(): self
+    {
+        $this->retry = true;
+        return $this;
+    }
+
+    public function fill(): void
+    {
+        if ($this->retry) {
+            $this->addOnSuccessWithTrials();
+        } else {
+            $this->addOnSuccess();
+        }
+    }
+
+    private function addOnSuccess(): void
     {
         $queryCount = sprintf(
             "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
@@ -38,7 +57,7 @@ class FillResults
         }
     }
 
-    public function addOnSuccessWithTrials(): void
+    private function addOnSuccessWithTrials(): void
     {
         $maximumTrials = 3;
         $currentTrial = 1;

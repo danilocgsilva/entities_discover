@@ -191,15 +191,15 @@ class Entity
             try {
 
                 $fillResults = new FillResults($tableLoop, $queryField, $relatedEntityIdentity, $countResults, $this->pdo);
+                if ($this->retry) {
+                    $fillResults->setRetry();
+                }
                 if ($this->timeDebug) {
                     $fillResults->setTimeDebug($this->timeDebug);
                 }
+
+                $fillResults->fill();
                 
-                if ($this->retry) {
-                    $fillResults->addOnSuccessWithTrials();
-                } else {
-                    $fillResults->addOnSuccess();
-                }
             } catch (PDOException $pdoe) {
                 $countResults->addFail(
                     $tableLoop->getName(), 
