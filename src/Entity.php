@@ -124,15 +124,6 @@ class Entity
                 continue;
             }
 
-            if ($tableLoop->getName() === "atm_averbacoes_encomendas_status") {
-                continue;
-            }
-
-
-            if ($tableLoop->getName() === "averbacoes_encomendas_descartadas") {
-                continue;
-            }
-
             $future[] = async(function () use ($tableLoop, $queryField, $relatedEntityIdentity, &$occurrences) {
                 try {
                     $queryCount = sprintf(
@@ -188,21 +179,10 @@ class Entity
             }
         }
 
-        var_dump($tables);
-
         /** @var array $occurrences */
         $occurrences = [];
         foreach ($tables as $tableLoop) {
             if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
-                continue;
-            }
-
-            if ($tableLoop->getName() === "atm_averbacoes_encomendas_status") {
-                continue;
-            }
-
-
-            if ($tableLoop->getName() === "averbacoes_encomendas_descartadas") {
                 continue;
             }
 
