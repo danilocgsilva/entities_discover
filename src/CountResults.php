@@ -17,7 +17,7 @@ class CountResults
 
     public function addFail(string $tableName): void
     {
-        $this->fails[$tableName];
+        $this->fails[] = $tableName;
     }
 
     public function getSuccesses(): array
