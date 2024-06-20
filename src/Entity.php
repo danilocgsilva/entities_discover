@@ -28,6 +28,8 @@ class Entity
 
     private bool $retry = false;
 
+    private int $awaitInSecondsBeforePdoRebuild = 0;
+
     public function __construct(ErrorLogInterface $errorLog)
     {
         $this->errorLog = $errorLog;
@@ -70,6 +72,12 @@ class Entity
     public function setRebuildPdo(): self
     {
         $this->rebuildPdo = true;
+        return $this;
+    }
+
+    public function setAwaitInSecondsBeforePdoRebuild(int $await): self
+    {
+        $this->awaitInSecondsBeforePdoRebuild = $await;
         return $this;
     }
 
@@ -219,6 +227,9 @@ class Entity
                 if ($this->rebuildPdo) {
                     if ($this->timeDebug) {
                         $this->timeDebug->message("PDO will be rebuilted.");
+                        if ($this->awaitInSecondsBeforePdoRebuild > 0) {
+                            $this->timeDebug->message("Awaiting " . $this->awaitInSecondsBeforePdoRebuild . " seconds before rebuild...");
+                        }
                     }
                     $this->pdo = $this->getNewPdo();
                 }
