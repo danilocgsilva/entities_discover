@@ -15,9 +15,9 @@ class CountResults
         $this->successes[$tableName] = $count;
     }
 
-    public function addFail(string $tableName): void
+    public function addFail(string $tableName, string $exceptionMessage): void
     {
-        $this->fails[] = $tableName;
+        $this->fails[$tableName] = $exceptionMessage;
     }
 
     public function getSuccesses(): array
