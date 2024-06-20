@@ -8,11 +8,9 @@ use PDO;
 use Generator;
 use ReflectionProperty;
 use Exception;
+use PDOException;
 use Danilocgsilva\Database\Discover;
 use Danilocgsilva\Database\Table;
-use Spatie\Async\Pool;
-use Amp\Mysql\MysqlConfig;
-use Amp\Mysql\MysqlConnectionPool;
 use function Amp\async;
 use Amp\Future;
 
@@ -200,11 +198,20 @@ class Entity
                 if ($this->timeDebug) {
                     $this->timeDebug->message("Success on " . $tableName . ": counted: " . (int) $row["occurrences"]);
                 }
-            } catch (Exception $e) {
-                $countResults->addFail($tableLoop->getName(), $e->getMessage(), ($exceptionClass = get_class($e)));
+            } catch (PDOException $pdoe) {
+                $countResults->addFail(
+                    $tableLoop->getName(), 
+                    ($exceptionMessage = $pdoe->getMessage()), 
+                    ($exceptionClass = get_class($pdoe))
+                );
                 if ($this->timeDebug) {
-                    $this->timeDebug->message("Fail counting occurrences in " . $tableName. ", exeception message: " . $e->getMessage() . ", class: " . $exceptionClass . ".");
+                    $this->timeDebug->message("Fail counting occurrences in " . $tableName. ", exeception message: " . $exceptionMessage . ", class: " . $exceptionClass . ".");
                 }
+            } catch (Exception $e) {
+                if ($this->timeDebug) {
+                    $this->timeDebug->message("Exception not expected in " . $tableName. ", exeception message: " . $e->getMessage() . ", class: " . get_class($e) . ".");
+                }
+                throw $e;
             }
         }
 
