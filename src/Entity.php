@@ -183,18 +183,9 @@ class Entity
             }
 
             try {
-                $queryCount = sprintf(
-                    "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
-                    $tableLoop->firstField,
-                    ($tableName = $tableLoop->getName()),
-                    $queryField,
-                    $relatedEntityIdentity
-                );
-
-                $preResult = $this->pdo->prepare($queryCount);
-                $preResult->execute([':search' => $relatedEntityIdentity]);
-                $row = $preResult->fetch(PDO::FETCH_ASSOC);
-                $countResults->addSucess($tableName, (int) $row["occurrences"]);
+                $row = $this->countOccurrences($tableLoop, $queryField, $relatedEntityIdentity);
+                
+                $countResults->addSucess(($tableName = $tableLoop->getName()), (int) $row["occurrences"]);
                 if ($this->timeDebug) {
                     $this->timeDebug->message("Success on " . $tableName . ": counted: " . (int) $row["occurrences"]);
                 }
@@ -231,5 +222,20 @@ class Entity
     private function isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField): bool
     {
         return $tableLoop->firstField === $queryField;
+    }
+
+    private function countOccurrences($tableLoop, $queryField, $relatedEntityIdentity)
+    {
+        $queryCount = sprintf(
+            "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
+            $tableLoop->firstField,
+            $tableLoop->getName(),
+            $queryField,
+            $relatedEntityIdentity
+        );
+
+        $preResult = $this->pdo->prepare($queryCount);
+        $preResult->execute([':search' => $relatedEntityIdentity]);
+        return $preResult->fetch(PDO::FETCH_ASSOC);
     }
 }
