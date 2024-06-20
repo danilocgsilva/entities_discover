@@ -214,6 +214,9 @@ class Entity
             if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
                 continue;
             }
+            if (in_array($tableLoop->getName(), $this->skipTables)) {
+                continue;
+            }
 
             $fillResults = new FillResults($tableLoop, $queryField, $relatedEntityIdentity, $countResults, $this->pdo);
             try {
