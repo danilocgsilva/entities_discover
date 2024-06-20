@@ -155,9 +155,8 @@ class Entity
      *
      * @param string $tableName
      * @param string|integer $relatedEntityIdentity
-     * @return array
      */
-    public function discoverEntitiesOccurrencesByIdentitySync(string $tableName, string|int $relatedEntityIdentity): array
+    public function discoverEntitiesOccurrencesByIdentitySync(string $tableName, string|int $relatedEntityIdentity): CountResults
     {
         if ($this->timeDebug) {
             $this->timeDebug->message('Staring fetches occurrences from table ' . $tableName);
@@ -179,8 +178,7 @@ class Entity
             }
         }
 
-        /** @var array $occurrences */
-        $occurrences = [];
+        $countResults = new CountResults();
         foreach ($tables as $tableLoop) {
             if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
                 continue;
@@ -190,7 +188,7 @@ class Entity
                 $queryCount = sprintf(
                     "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
                     $tableLoop->firstField,
-                    $tableLoop->getName(),
+                    ($tableName = $tableLoop->getName()),
                     $queryField,
                     $relatedEntityIdentity
                 );
@@ -198,15 +196,19 @@ class Entity
                 $preResult = $this->pdo->prepare($queryCount);
                 $preResult->execute([':search' => $relatedEntityIdentity]);
                 $row = $preResult->fetch(PDO::FETCH_ASSOC);
-                $occurrences[$tableLoop->getName()] = $row["occurrences"];
-                print($tableLoop->getName() . " - " . $row["occurrences"] . "\n");
+                $countResults->addSucess($tableName, (int) $row["occurrences"]);
+                if ($this->timeDebug) {
+                    $this->timeDebug->message("Success on " . $tableName . ": counted: " . (int) $row["occurrences"]);
+                }
             } catch (Exception $e) {
-                print("Deu ruim para " . $tableLoop->getName() . "\n");
-                $occurrences[$tableLoop->getName()] = "0";
+                $countResults->addFail($tableLoop->getName());
+                if ($this->timeDebug) {
+                    $this->timeDebug->message("Fail counting occurrences in " . $tableName);
+                }
             }
         }
 
-        return $occurrences;
+        return $countResults;
     }
 
     /**
