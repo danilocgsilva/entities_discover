@@ -189,10 +189,16 @@ class Entity
             }
 
             try {
+
+                $occurrentesCounter = new OccurrencesCounter($tableLoop, $queryField, $relatedEntityIdentity, $countResults, $this->pdo);
+                if ($this->timeDebug) {
+                    $occurrentesCounter->setTimeDebug($this->timeDebug);
+                }
+                
                 if ($this->retry) {
-                    $this->addOnSuccessWithTrials($tableLoop, $queryField, $relatedEntityIdentity, $countResults);
+                    $occurrentesCounter->addOnSuccessWithTrials();
                 } else {
-                    $this->addOnSuccess($tableLoop, $queryField, $relatedEntityIdentity, $countResults);
+                    $occurrentesCounter->addOnSuccess();
                 }
             } catch (PDOException $pdoe) {
                 $countResults->addFail(
@@ -227,44 +233,5 @@ class Entity
     private function isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField): bool
     {
         return $tableLoop->firstField === $queryField;
-    }
-
-    private function addOnSuccess($tableLoop, $queryField, $relatedEntityIdentity, $countResults): void
-    {
-        $queryCount = sprintf(
-            "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
-            $tableLoop->firstField,
-            $tableLoop->getName(),
-            $queryField,
-            $relatedEntityIdentity
-        );
-
-        $preResult = $this->pdo->prepare($queryCount);
-        $preResult->execute([':search' => $relatedEntityIdentity]);
-        $row = $preResult->fetch(PDO::FETCH_ASSOC);
-        $countResults->addSucess(($tableName = $tableLoop->getName()), (int) $row["occurrences"]);
-        if ($this->timeDebug) {
-            $this->timeDebug->message("Success on " . $tableName . ": counted: " . (int) $row["occurrences"]);
-        }
-    }
-
-    private function addOnSuccessWithTrials($tableLoop, $queryField, $relatedEntityIdentity, $countResults): void
-    {
-        $maximumTrials = 3;
-        $currentTrial = 1;
-        while ($currentTrial <= $maximumTrials) {
-            try {
-                $this->addOnSuccess($tableLoop, $queryField, $relatedEntityIdentity, $countResults);
-                break;
-            } catch (Exception $e) {
-                if ($this->timeDebug) {
-                    $this->timeDebug->message("Fail in trial " . $currentTrial . ". Message: " . $e->getMessage() . ". Exception class: " . get_class($e));
-                }
-                if ($currentTrial === $maximumTrials) {
-                    throw $e;
-                }
-                $currentTrial++;
-            }
-        }
     }
 }
