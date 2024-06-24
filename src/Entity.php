@@ -17,7 +17,7 @@ use Amp\Future;
 class Entity
 {
     private string $tableName;
-    private PDO|null $pdo;
+    private PDO|null $pdo = null;
     private ErrorLogInterface $errorLog;
     private int $foreignsFound = 0;
     private TimeDebug|null $timeDebug = null;
