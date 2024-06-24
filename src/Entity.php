@@ -193,6 +193,10 @@ class Entity
             $this->timeDebug->message('Staring fetches occurrences from table ' . $tableName);
         }
 
+        if (!$this->pdo) {
+            $this->pdo = $this->getNewPdo();
+        }
+
         $queryField = (new Table())
             ->setName($tableName)
             ->fetchFirstField($this->pdo)
