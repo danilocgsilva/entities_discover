@@ -22,7 +22,7 @@ class Entity
 
     private $errorLog;
 
-    private $timeDebug = null;
+    private TimeDebugInterface|null $timeDebug = null;
 
     private int $foreignsFound = 0;
 
@@ -53,7 +53,7 @@ class Entity
         return $this;
     }
 
-    public function setTimeDebug($timeDebug): self
+    public function setTimeDebug(TimeDebugInterface $timeDebug): self
     {
         $this->timeDebug = $timeDebug;
         return $this;
