@@ -17,10 +17,14 @@ use Amp\Future;
 class Entity
 {
     private string $tableName;
+
     private PDO|null $pdo = null;
-    private ErrorLogInterface $errorLog;
+
+    private $errorLog;
+
+    private $timeDebug = null;
+
     private int $foreignsFound = 0;
-    private TimeDebugInterface|null $timeDebug = null;
 
     private PdoReceipt|null $pdoReceipt;
 
@@ -32,7 +36,7 @@ class Entity
 
     private array $skipTables = [];
 
-    public function __construct(ErrorLogInterface $errorLog)
+    public function __construct($errorLog)
     {
         $this->errorLog = $errorLog;
     }
@@ -49,7 +53,7 @@ class Entity
         return $this;
     }
 
-    public function setTimeDebug(TimeDebugInterface $timeDebug): self
+    public function setTimeDebug($timeDebug): self
     {
         $this->timeDebug = $timeDebug;
         return $this;
