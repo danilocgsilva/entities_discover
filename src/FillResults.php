@@ -9,7 +9,7 @@ use PDO;
 
 class FillResults
 {
-    private TimeDebug|null $timeDebug = null;
+    private TimeDebugInterface|null $timeDebug = null;
 
     private bool $retry = false;
 
@@ -17,7 +17,7 @@ class FillResults
     {
     }
 
-    public function setTimeDebug(TimeDebug $timeDebug): self
+    public function setTimeDebug(TimeDebugInterface $timeDebug): self
     {
         $this->timeDebug = $timeDebug;
         return $this;

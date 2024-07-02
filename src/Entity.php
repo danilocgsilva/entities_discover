@@ -49,7 +49,7 @@ class Entity
         return $this;
     }
 
-    public function setTimeDebug(TimeDebug $timeDebug): self
+    public function setTimeDebug(TimeDebugInterface $timeDebug): self
     {
         $this->timeDebug = $timeDebug;
         return $this;
