@@ -20,7 +20,7 @@ class Entity
     private PDO|null $pdo = null;
     private ErrorLogInterface $errorLog;
     private int $foreignsFound = 0;
-    private TimeDebug|null $timeDebug = null;
+    private TimeDebugInterface|null $timeDebug = null;
 
     private PdoReceipt|null $pdoReceipt;
 

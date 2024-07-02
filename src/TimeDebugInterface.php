@@ -4,7 +4,7 @@ declare(strict_types= 1);
 
 namespace Danilocgsilva\EntitiesDiscover;
 
-interface TimeDebug
+interface TimeDebugInterface
 {
     public function message(string $message): void;
 }
