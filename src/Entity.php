@@ -23,15 +23,10 @@ class Entity
     
     private int $foreignsFound = 0;
 
-    private PdoReceipt|null $pdoReceipt;
-
-    private bool $rebuildPdo = false;
-
-    private bool $retry = false;
-
-    private int $awaitInSecondsBeforePdoRebuild = 0;
-
     private array $skipTables = [];
+
+
+    private DiscoverRelations $discoverRelations;
 
     public function setDebugMessages(LogInterface $debugMessages): self
     {
@@ -113,19 +108,20 @@ class Entity
             throw new Exception("This methods requires a pdo setted in the class.");
         }
 
-        $discoverRelations = (new DiscoverRelations())
+        $this->discoverRelations = (new DiscoverRelations())
         ->setPdo($this->pdo)
         ->setSkipTables($this->skipTables);
 
         if (isset($this->debugMessages)) {
             $this->debugMessages->message("Checks successfully meeted.");
-            $discoverRelations->setDebugMessages($this->debugMessages);
+            $this->discoverRelations->setDebugMessages($this->debugMessages);
         }
 
         /**
          * @var CountResults
          */
-        $results = $discoverRelations
+        $results = $this
+        ->discoverRelations
         ->discoverEntitiesOccurrencesByIdentitySync($tableName, $relatedEntityIdentity);
 
         if (isset($this->timeDebug)) {
@@ -133,5 +129,10 @@ class Entity
         }
 
         return $results;
+    }
+
+    public function getTableIdFieldName(): string
+    {
+        return $this->discoverRelations->getTableIdFieldName();
     }
 }

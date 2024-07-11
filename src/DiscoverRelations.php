@@ -20,6 +20,8 @@ class DiscoverRelations
 
     private array $skipTables = [];
 
+    private string $tableIdFieldName;
+
     public function setPdo(PDO $pdo): self
     {
         $this->pdo = $pdo;
@@ -37,7 +39,7 @@ class DiscoverRelations
         $this->debugMessages = $debugMessages;
         return $this;
     }
-    
+
     /**
      * Returns an associative array, givin the table name as a key and an integer as the occurrences count.
      *
@@ -53,7 +55,7 @@ class DiscoverRelations
             $this->debugMessages->message('Staring fetches occurrences from table ' . $tableName);
         }
 
-        $queryField = (new Table())
+        $this->tableIdFieldName = $queryField = (new Table())
         ->setName($tableName)
         ->fetchFirstField($this->pdo)
         ->firstField;
@@ -107,6 +109,11 @@ class DiscoverRelations
         }
 
         return $countResults;
+    }
+
+    public function getTableIdFieldName(): string
+    {
+        return $this->tableIdFieldName;
     }
 
     private function isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField): bool
