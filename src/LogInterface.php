@@ -4,7 +4,7 @@ declare(strict_types= 1);
 
 namespace Danilocgsilva\EntitiesDiscover;
 
-interface ErrorLogInterface
+interface LogInterface
 {
-    function message(string $message);
+    public function message(string $message);
 }

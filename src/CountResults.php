@@ -28,6 +28,11 @@ class CountResults
         return $this->successes;
     }
 
+    public function getSuccessesNotEmpty()
+    {
+        return array_filter($this->successes, fn ($entry) => $entry > 0);
+    }
+
     public function getFails(): array
     {
         return $this->fails;

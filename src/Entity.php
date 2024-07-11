@@ -8,22 +8,19 @@ use PDO;
 use Generator;
 use ReflectionProperty;
 use Exception;
-use PDOException;
-use Danilocgsilva\Database\Discover;
-use Danilocgsilva\Database\Table;
-use function Amp\async;
-use Amp\Future;
 
 class Entity
 {
     private string $tableName;
 
-    private PDO|null $pdo = null;
+    private PDO $pdo;
 
-    private $errorLog = null;
+    private LogInterface $errorLog;
 
-    private TimeDebugInterface|null $timeDebug = null;
+    private LogInterface $debugMessages;
 
+    private LogInterface $timeDebug;
+    
     private int $foreignsFound = 0;
 
     private PdoReceipt|null $pdoReceipt;
@@ -36,11 +33,16 @@ class Entity
 
     private array $skipTables = [];
 
-    public function __construct($errorLog = null)
+    public function setDebugMessages(LogInterface $debugMessages): self
     {
-        if ($errorLog) {
-            $this->errorLog = $errorLog;
-        }
+        $this->debugMessages = $debugMessages;
+        return $this;
+    }
+
+    public function setTimeDebug(LogInterface $timeDebug): self
+    {
+        $this->timeDebug = $timeDebug;
+        return $this;
     }
 
     public function setSkipTables(array $skipingTables): self
@@ -55,21 +57,9 @@ class Entity
         return $this;
     }
 
-    public function setTimeDebug(TimeDebugInterface $timeDebug): self
-    {
-        $this->timeDebug = $timeDebug;
-        return $this;
-    }
-
     public function setPdo(PDO $pdo): self
     {
         $this->pdo = $pdo;
-        return $this;
-    }
-
-    public function setPdoReceipt(PdoReceipt $pdoReceipt): self
-    {
-        $this->pdoReceipt = $pdoReceipt;
         return $this;
     }
 
@@ -78,30 +68,11 @@ class Entity
         return $this->foreignsFound;
     }
 
-    public function setRetry(): self{
-        $this->retry = true;
-        return $this;
-    }
-
-    public function setRebuildPdo(): self
-    {
-        $this->rebuildPdo = true;
-        return $this;
-    }
-
-    public function setAwaitInSecondsBeforePdoRebuild(int $await): self
-    {
-        $this->awaitInSecondsBeforePdoRebuild = $await;
-        return $this;
-    }
-
     public function getForeigns(): Generator
     {
         if (!(new ReflectionProperty($this, 'tableName'))->isInitialized($this)) {
             $message = "You still have not setted the table.";
-            if ($this->errorLog) {
-                $this->errorLog->message($message);
-            }
+            $this->errorLog->message($message);
             throw new Exception($message);
         }
 
@@ -128,149 +99,39 @@ class Entity
      *
      * @param string $tableName
      * @param string|integer $relatedEntityIdentity
-     * @return array
      */
-    public function discoverEntitiesOccurrencesByIdentityAsync(string $tableName, string|int $relatedEntityIdentity): array
+    public function discoverEntitiesOccurrencesByIdentitySync(
+        string $tableName, 
+        string|int $relatedEntityIdentity
+    ): CountResults
     {
-        if ($this->timeDebug) {
+        if (isset($this->timeDebug)) {
             $this->timeDebug->message('Staring fetches occurrences from table ' . $tableName);
         }
 
-        $queryField = (new Table())
-            ->setName($tableName)
-            ->fetchFirstField($this->pdo)
-            ->firstField;
-
-        /** @var \Danilocgsilva\Database\Table[] $tables */
-        $tables = [];
-        foreach ($this->getTablesWithField($queryField) as $table) {
-            $table->fetchFirstField($this->pdo);
-            $tables[] = $table;
-
-            if ($this->timeDebug) {
-                $this->timeDebug->message("Fetched occurrence in table " . $table . " for table " . $tableName);
-            }
+        if (!isset($this->pdo)) {
+            throw new Exception("This methods requires a pdo setted in the class.");
         }
 
-        /** @var array $occurrences */
-        $occurrences = [];
-        $future = [];
+        $discoverRelations = (new DiscoverRelations())
+        ->setPdo($this->pdo)
+        ->setSkipTables($this->skipTables);
 
-        foreach ($tables as $tableLoop) {
-            if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
-                continue;
-            }
-
-            $future[] = async(function () use ($tableLoop, $queryField, $relatedEntityIdentity, &$occurrences) {
-                try {
-                    $queryCount = sprintf(
-                        "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
-                        $tableLoop->firstField,
-                        $tableLoop->getName(),
-                        $queryField,
-                        $relatedEntityIdentity
-                    );
-
-                    $preResult = $this->pdo->prepare($queryCount);
-                    $preResult->execute([':search' => $relatedEntityIdentity]);
-                    $row = $preResult->fetch(PDO::FETCH_ASSOC);
-                    $occurrences[$tableLoop->getName()] = $row["occurrences"];
-                } catch (Exception $e) {
-                    $occurrences[$tableLoop->getName()] = "0";
-                }
-            });
+        if (isset($this->debugMessages)) {
+            $this->debugMessages->message("Checks successfully meeted.");
+            $discoverRelations->setDebugMessages($this->debugMessages);
         }
 
-        Future\await($future);
+        /**
+         * @var CountResults
+         */
+        $results = $discoverRelations
+        ->discoverEntitiesOccurrencesByIdentitySync($tableName, $relatedEntityIdentity);
 
-        return $occurrences;
-    }
-
-    /**
-     * Returns an associative array, givin the table name as a key and an integer as the occurrences count.
-     *
-     * @param string $tableName
-     * @param string|integer $relatedEntityIdentity
-     */
-    public function discoverEntitiesOccurrencesByIdentitySync(string $tableName, string|int $relatedEntityIdentity): CountResults
-    {
-        if ($this->timeDebug) {
-            $this->timeDebug->message('Staring fetches occurrences from table ' . $tableName);
+        if (isset($this->timeDebug)) {
+            $this->timeDebug->message('Finished with ' . $tableName);
         }
 
-        if (!$this->pdo) {
-            $this->pdo = $this->getNewPdo();
-        }
-
-        $queryField = (new Table())
-            ->setName($tableName)
-            ->fetchFirstField($this->pdo)
-            ->firstField;
-
-        /** @var \Danilocgsilva\Database\Table[] $tables */
-        $tables = [];
-        foreach ($this->getTablesWithField($queryField) as $table) {
-            $table->fetchFirstField($this->pdo);
-            $tables[] = $table;
-
-            if ($this->timeDebug) {
-                $this->timeDebug->message("Fetched occurrence in table " . $table . " for table " . $tableName);
-            }
-        }
-
-        /** @var array $occurrences */
-        $occurrences = [];
-        foreach ($tables as $tableLoop) {
-            if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
-                continue;
-            }
-
-            try {
-                $queryCount = sprintf(
-                    "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
-                    $tableLoop->firstField,
-                    $tableLoop->getName(),
-                    $queryField,
-                    $relatedEntityIdentity
-                );
-
-                $preResult = $this->pdo->prepare($queryCount);
-                $preResult->execute([':search' => $relatedEntityIdentity]);
-                $row = $preResult->fetch(PDO::FETCH_ASSOC);
-                $occurrences[$tableLoop->getName()] = $row["occurrences"];
-                print($tableLoop->getName() . " - " . $row["occurrences"] . "\n");
-            } catch (Exception $e) {
-                if ($this->timeDebug) {
-                    $this->timeDebug->message("Exception not expected in " . $tableName. ", exeception message: " . $e->getMessage() . ", class: " . get_class($e) . ".");
-                }
-                throw $e;
-            }
-        }
-
-        return $countResults;
-    }
-
-    /**
-     * @param string $field
-     * @return Generator|\Danilocgsilva\Database\Table[]
-     */
-    private function getTablesWithField(string $field): Generator
-    {
-        $databaseDiscover = new Discover($this->pdo);
-        return $databaseDiscover->tablesWithEqualFieldName($field);
-    }
-
-    private function isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField): bool
-    {
-        return $tableLoop->firstField === $queryField;
-    }
-
-    private function getNewPdo(): PDO
-    {
-        return new PDO(
-            sprintf("mysql:host=%s;dbname=%s", $this->pdoReceipt->host, $this->pdoReceipt->database), 
-            $this->pdoReceipt->user, 
-            $this->pdoReceipt->password
-        );
+        return $results;
     }
 }
