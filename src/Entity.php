@@ -20,7 +20,7 @@ class Entity
 
     private PDO|null $pdo = null;
 
-    private $errorLog;
+    private $errorLog = null;
 
     private TimeDebugInterface|null $timeDebug = null;
 
@@ -36,9 +36,11 @@ class Entity
 
     private array $skipTables = [];
 
-    public function __construct($errorLog)
+    public function __construct($errorLog = null)
     {
-        $this->errorLog = $errorLog;
+        if ($errorLog) {
+            $this->errorLog = $errorLog;
+        }
     }
 
     public function setSkipTables(array $skipingTables): self
@@ -97,7 +99,9 @@ class Entity
     {
         if (!(new ReflectionProperty($this, 'tableName'))->isInitialized($this)) {
             $message = "You still have not setted the table.";
-            $this->errorLog->message($message);
+            if ($this->errorLog) {
+                $this->errorLog->message($message);
+            }
             throw new Exception($message);
         }
 
