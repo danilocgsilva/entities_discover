@@ -75,6 +75,9 @@ class DiscoverRelations
                 continue;
             }
             if (in_array($tableLoop->getName(), $this->skipTables)) {
+                if (isset($this->debugMessages)) {
+                    $this->debugMessages->message(sprintf("Table %s skiped.", $tableLoop->getName()));
+                }
                 continue;
             }
 
