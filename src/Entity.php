@@ -160,9 +160,6 @@ class Entity
             if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
                 continue;
             }
-            if (in_array($tableLoop->getName(), $this->skipTables)) {
-                continue;
-            }
 
             $future[] = async(function () use ($tableLoop, $queryField, $relatedEntityIdentity, &$occurrences) {
                 try {
@@ -221,45 +218,27 @@ class Entity
             }
         }
 
-        $countResults = new CountResults();
+        /** @var array $occurrences */
+        $occurrences = [];
         foreach ($tables as $tableLoop) {
             if ($this->isLoopFieldTheSameFromTableOrigin($tableLoop, $queryField)) {
                 continue;
             }
-            if (in_array($tableLoop->getName(), $this->skipTables)) {
-                continue;
-            }
 
-            $fillResults = new FillResults($tableLoop, $queryField, $relatedEntityIdentity, $countResults, $this->pdo);
             try {
-                if ($this->retry) {
-                    $fillResults->setRetry();
-                }
-                if ($this->timeDebug) {
-                    $fillResults->setTimeDebug($this->timeDebug);
-                }
-
-                $fillResults->add();
-                
-            } catch (PDOException $pdoe) {
-                $countResults->addFail(
-                    $tableLoop->getName(), 
-                    ($exceptionMessage = $pdoe->getMessage()), 
-                    ($exceptionClass = get_class($pdoe))
+                $queryCount = sprintf(
+                    "SELECT COUNT(%s) as occurrences FROM %s WHERE %s = :search;",
+                    $tableLoop->firstField,
+                    $tableLoop->getName(),
+                    $queryField,
+                    $relatedEntityIdentity
                 );
-                if ($this->timeDebug) {
-                    $this->timeDebug->message("Fail counting occurrences in " . $tableName. ", exeception message: " . $exceptionMessage . ", class: " . $exceptionClass . ".");
-                }
-                if ($this->rebuildPdo) {
-                    if ($this->timeDebug) {
-                        $this->timeDebug->message("PDO will be rebuilted.");
-                        if ($this->awaitInSecondsBeforePdoRebuild > 0) {
-                            $this->timeDebug->message("Awaiting " . $this->awaitInSecondsBeforePdoRebuild . " seconds before rebuild...");
-                        }
-                    }
-                    sleep($this->awaitInSecondsBeforePdoRebuild);
-                    $this->pdo = $this->getNewPdo();
-                }
+
+                $preResult = $this->pdo->prepare($queryCount);
+                $preResult->execute([':search' => $relatedEntityIdentity]);
+                $row = $preResult->fetch(PDO::FETCH_ASSOC);
+                $occurrences[$tableLoop->getName()] = $row["occurrences"];
+                print($tableLoop->getName() . " - " . $row["occurrences"] . "\n");
             } catch (Exception $e) {
                 if ($this->timeDebug) {
                     $this->timeDebug->message("Exception not expected in " . $tableName. ", exeception message: " . $e->getMessage() . ", class: " . get_class($e) . ".");
