@@ -55,10 +55,7 @@ class DiscoverRelations
             $this->debugMessages->message('Staring fetches occurrences from table ' . $tableName);
         }
 
-        $this->tableIdFieldName = $queryField = (new Table())
-        ->setName($tableName)
-        ->fetchFirstField($this->pdo)
-        ->firstField;
+        $queryField = $this->getTableIdFieldName($tableName);
 
         /** @var \Danilocgsilva\Database\Table[] $tables */
         $tables = [];
@@ -111,8 +108,14 @@ class DiscoverRelations
         return $countResults;
     }
 
-    public function getTableIdFieldName(): string
+    public function getTableIdFieldName(string|null $tableName = null): string
     {
+        if (!isset($this->tableIdFieldName) && $tableName) {
+            $this->tableIdFieldName = (new Table())
+            ->setName($tableName)
+            ->fetchFirstField($this->pdo)
+            ->firstField;
+        }
         return $this->tableIdFieldName;
     }
 
