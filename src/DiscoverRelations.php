@@ -130,7 +130,8 @@ class DiscoverRelations
      */
     private function getTablesWithField(string $field): Generator
     {
-        $databaseDiscover = new Discover($this->pdo);
-        return $databaseDiscover->tablesWithEqualFieldName($field);
+        return (new Discover($this->pdo))
+        ->setSkipTables($this->skipTables)
+        ->tablesWithEqualFieldName($field);
     }
 }
